@@ -107,5 +107,12 @@ class AES:
             b >>= 1
         return result
 
-    def add_round_key(self,block,key):
-        return block
+    def add_round_key(self,state_matrix, round_key_matrix):
+        result_matrix = [[0] * 4 for _ in range(4)]
+
+        for i in range(4):
+            for j in range(4):
+                # Perform XOR operation between the corresponding bytes
+                result_matrix[i][j] = state_matrix[i][j] ^ round_key_matrix[i][j]
+
+        return result_matrix
