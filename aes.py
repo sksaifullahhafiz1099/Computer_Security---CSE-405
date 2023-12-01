@@ -54,16 +54,58 @@ class AES:
             for j in range(4):
                 sub_matrix[i][j] = self.s_box[first_4_bits_matrix[i][j]][second_4_bits_matrix[i][j]]
 
-        #print(first_4_bits_matrix)
-        #print(second_4_bits_matrix)
-        #print(hex(self.inv_s_box[0][2]))
+        return sub_matrix
+    
+    def inv_substitute_bytes(self,block):
+        first_4_bits_matrix = [[(element >> 4) & 0xF for element in row] for row in block]
+        second_4_bits_matrix = [[element & 0xF for element in row] for row in block]
+        
+        sub_matrix = [[0] * 4 for _ in range(4)] 
+
+        for i in range(4):
+            for j in range(4):
+                sub_matrix[i][j] = self.inv_s_box[first_4_bits_matrix[i][j]][second_4_bits_matrix[i][j]]
+
         return sub_matrix
 
     def shift_row(self, block):
+        block[1] = block[1][1:] + block[1][:1]
+        block[2] = block[2][2:] + block[2][:2]
+        block[3] = block[3][3:] + block[3][:3]
         return block
 
-    def mix_columns(self,block):
-        return block
+    def mix_columns(self,state):
+        # Fixed polynomial for MixColumns operation
+        fixed_polynomial = [0x02, 0x03, 0x01, 0x01]
+
+        for col in range(4):
+            # Get the current column
+            current_column = [state[row][col] for row in range(4)]
+
+            # Perform multiplication in GF(2^8)
+            result_column = [
+                self.galois_multiply(current_column[0], fixed_polynomial[0]),
+                self.galois_multiply(current_column[1], fixed_polynomial[1]),
+                self.galois_multiply(current_column[2], fixed_polynomial[2]),
+                self.galois_multiply(current_column[3], fixed_polynomial[3])
+            ]
+
+            # Update the state with the result
+            for row in range(4):
+                state[row][col] = result_column[row]
+
+        return state
+
+    def galois_multiply(self,a, b):
+        result = 0
+        while b:
+            if b & 1:
+                result ^= a
+            a <<= 1
+            if a & 0x100:
+                a ^= 0x11B  # Irreducible polynomial in GF(2^8)
+            b >>= 1
+        return result
 
     def add_round_key(self,block,key):
         return block
