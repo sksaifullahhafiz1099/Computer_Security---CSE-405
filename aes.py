@@ -1,4 +1,7 @@
-#Class in detail
+from BitVector import *
+from bitvectordemo import *
+from util import *
+
 class AES:
 
     # AES S-box
@@ -47,72 +50,58 @@ class AES:
     def substitute_bytes(self,block):
         first_4_bits_matrix = [[(element >> 4) & 0xF for element in row] for row in block]
         second_4_bits_matrix = [[element & 0xF for element in row] for row in block]
-        
         sub_matrix = [[0] * 4 for _ in range(4)] 
-
         for i in range(4):
             for j in range(4):
                 sub_matrix[i][j] = self.s_box[first_4_bits_matrix[i][j]][second_4_bits_matrix[i][j]]
-
         return sub_matrix
     
     def inv_substitute_bytes(self,block):
         first_4_bits_matrix = [[(element >> 4) & 0xF for element in row] for row in block]
         second_4_bits_matrix = [[element & 0xF for element in row] for row in block]
-        
         sub_matrix = [[0] * 4 for _ in range(4)] 
-
         for i in range(4):
             for j in range(4):
                 sub_matrix[i][j] = self.inv_s_box[first_4_bits_matrix[i][j]][second_4_bits_matrix[i][j]]
-
         return sub_matrix
+
 
     def shift_row(self, block):
         block[1] = block[1][1:] + block[1][:1]
         block[2] = block[2][2:] + block[2][:2]
         block[3] = block[3][3:] + block[3][:3]
         return block
+    
+    def inv_shift_row(self, block):
+        block[1] = block[1][-1:] + block[1][:-1]
+        block[2] = block[2][-2:] + block[2][:-2]
+        block[3] = block[3][-3:] + block[3][:-3]
+        return block
 
-    def mix_columns(self,state):
-        # Fixed polynomial for MixColumns operation
-        fixed_polynomial = [0x02, 0x03, 0x01, 0x01]
-
+    def mix_columns(self,matrix):
+        mixed_matrix = [[BitVector(intVal=0, size=8) for _ in range(4)] for _ in range(4)]
+        string_matrix=[['{:02X}'.format(value) for value in row] for row in matrix]
         for col in range(4):
-            # Get the current column
-            current_column = [state[row][col] for row in range(4)]
-
-            # Perform multiplication in GF(2^8)
-            result_column = [
-                self.galois_multiply(current_column[0], fixed_polynomial[0]),
-                self.galois_multiply(current_column[1], fixed_polynomial[1]),
-                self.galois_multiply(current_column[2], fixed_polynomial[2]),
-                self.galois_multiply(current_column[3], fixed_polynomial[3])
-            ]
-
-            # Update the state with the result
             for row in range(4):
-                state[row][col] = result_column[row]
+                for i in range(4):
+                    mixed_matrix[row][col] ^= Mixer[row][i].gf_multiply_modular(BitVector(hexstring=string_matrix[i][col]), AES_modulus, 8)
+        int_matrix = [[int(element.getHexStringFromBitVector(), 16) for element in row] for row in mixed_matrix]
+        return int_matrix
 
-        return state
-
-    def galois_multiply(self,a, b):
-        result = 0
-        while b:
-            if b & 1:
-                result ^= a
-            a <<= 1
-            if a & 0x100:
-                a ^= 0x11B  # Irreducible polynomial in GF(2^8)
-            b >>= 1
-        return result
+    def inv_mix_columns(self,matrix):
+        mixed_matrix = [[BitVector(intVal=0, size=8) for _ in range(4)] for _ in range(4)]
+        string_matrix=[['{:02X}'.format(value) for value in row] for row in matrix]
+        for col in range(4):
+            for row in range(4):
+                for i in range(4):
+                    mixed_matrix[row][col] ^= InvMixer[row][i].gf_multiply_modular(BitVector(hexstring=string_matrix[i][col]), AES_modulus, 8)
+        int_matrix = [[int(element.getHexStringFromBitVector(), 16) for element in row] for row in mixed_matrix]
+        return int_matrix
 
     def add_round_key(self,state_matrix, round_key_matrix):
-        result_matrix = [[0] * 4 for _ in range(4)]
-
+        result_matrix = [[0] * 4 for _ in range(4)]   
+        round_key_matrix = list(map(list, zip(*round_key_matrix)))
         for i in range(4):
             for j in range(4):
-                # Perform XOR operation between the corresponding bytes
                 result_matrix[i][j] = state_matrix[i][j] ^ round_key_matrix[i][j]
-
         return result_matrix

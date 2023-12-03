@@ -1,6 +1,12 @@
 class Util:
     def __init__(self) -> None:
         pass
+    
+    def print_mat_row(self,m):
+        for row in m:
+            for element in row:
+                print(hex(element), end=" ")
+        print("") 
 
     def print_mat(self,m):
         for row in m:
