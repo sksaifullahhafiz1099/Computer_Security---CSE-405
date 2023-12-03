@@ -33,3 +33,10 @@ class Util:
         hex_values = [ord(char) for char in input_str]
         matrix = [[hex_values[i + j * 4] for i in range(4)] for j in range(4)]
         return matrix
+    
+    def matrix_to_string(self,matrix):
+        result_string = ""
+        for row in matrix:
+            for element in row:
+                result_string += chr(element)
+        return result_string
