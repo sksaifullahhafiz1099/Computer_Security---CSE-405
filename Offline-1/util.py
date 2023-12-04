@@ -40,3 +40,29 @@ class Util:
             for element in row:
                 result_string += chr(element)
         return result_string
+    
+    def matrix_list_to_string(self,matrix):
+        result_string = ""
+        for i in range(len(matrix)):
+            for row in matrix[i]:
+                for element in row:
+                    result_string += chr(element)
+        return result_string
+    
+    def matrix_list_to_string_inv(self,matrix):
+        result_string = ""
+        for i in range(len(matrix)):
+            matrix[i] = list(map(list, zip(*matrix[i])))
+            for row in matrix[i]:
+                for element in row:
+                    result_string += chr(element)
+                    #print(hex(element)," ",chr(element))
+        return result_string
+
+    def xor(self,a,b):
+        x = [[0] * 4 for _ in range(4)]
+        for i in range(4):
+            for j in range(4):
+                x[i][j] = a[i][j]^b[i][j]
+        return x
+    
