@@ -1,4 +1,17 @@
 import random
+from sympy import isprime
+
+def generate_random_prime(min_value=10**3):
+    while True:
+        candidate = random.randint(min_value, min_value * 10)
+        if isprime(candidate):
+            return candidate
+
+# Example usage
+random_prime = generate_random_prime()
+print("Random Prime Number:", random_prime)
+
+import random
 
 def is_quadratic_residue(x, p):
     return pow(x, (p - 1) // 2, p) == 1
@@ -45,10 +58,9 @@ def generate_point_on_curve(a, b, p):
         if y is not None:
             return (x, y)
 
-# Example usage:
-p = 19  # replace with your prime
-a = 2   # replace with your constant a
-b = 2   # replace with your constant b
+p = generate_random_prime() 
+a = 2  
+b = 3   
 
 random_point = generate_point_on_curve(a, b, p)
 print("Generated Point:", random_point)
