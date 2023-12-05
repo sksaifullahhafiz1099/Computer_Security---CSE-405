@@ -38,16 +38,18 @@ def generate_prime_in_range(lower, upper):
 
 #-----------------------------------------------------------
 
+
+
 def add_points(P, Q, p):
     x1, y1 = P
     x2, y2 = Q
     if x1 == x2 and y1 == y2:
-        s = (3*x1*x2 + a) //(2*y1)
+        s = ((3*x1*x2 + a)*pow((2*y1),-1,p))%p
     else:
-        s = (y2 - y1)//(x2 - x1)
+        s = ((y2 - y1)*pow((x2 - x1),-1,p))%p
+    
     x3 = (s*s - x1 - x2) % p
-    y3 = (s * (x1 - x3) - y1) % p        
-    print(x3,"--",y3)
+    y3 = (s * (x1 - x3) - y1) % p       
     return x3, y3
  
      
@@ -65,7 +67,7 @@ def apply_double_and_add_method(G, k, p):
 
 
 #shared----------------------------
-p = generate_prime_in_range(1000,5000)
+p = generate_prime_in_range(100000000000,500000000000)
 a = random.randrange(5,p)
 G = (random.randrange(3000,4000),random.randrange(5000,6000))
 b = G[1]**2 - G[0]**3 - G[0] * a 
@@ -74,15 +76,11 @@ upper_limit = p + 1 + 2 * int(p**0.5)
 #----------------------------------
 
 #Alice:
-Ka = generate_prime_in_range(lower_limit, upper_limit)
-print(Ka)
+Ka = generate_prime_in_range(2, upper_limit)
 Kapub = apply_double_and_add_method(G,Ka,p)
-print(Kapub)
 #Bob
-Kb = generate_prime_in_range(lower_limit, upper_limit)
-print(Kb)
+Kb = generate_prime_in_range(2, upper_limit)
 Kbpub = apply_double_and_add_method(G,Kb,p)
-print(Kbpub)
 #Alice decrypting:
 Key_Alice = apply_double_and_add_method(Kbpub,Ka,p) 
 #Bob Decrypting:
