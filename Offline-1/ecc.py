@@ -36,27 +36,18 @@ def generate_prime_in_range(lower, upper):
         n = random.randint(lower, upper)
     return n
 
-
-
-sets = [
-[1049,1628, 3704],
-[5087,2192, 5909],
-[5987,5250, 3183],
-[8999,2026, 4728],
-[4951,2575, 699]
-]
-
 #-----------------------------------------------------------
 
 def add_points(P, Q, p):
     x1, y1 = P
     x2, y2 = Q
     if x1 == x2 and y1 == y2:
-        s = (3*x1*x2 + a) /(2*y1)
+        s = (3*x1*x2 + a) //(2*y1)
     else:
-        s = (y2 - y1)/(x2 - x1)
+        s = (y2 - y1)//(x2 - x1)
     x3 = (s*s - x1 - x2) % p
     y3 = (s * (x1 - x3) - y1) % p        
+    print(x3,"--",y3)
     return x3, y3
  
      
@@ -67,18 +58,17 @@ def apply_double_and_add_method(G, k, p):
         current_bit = k_binary[i: i+1]
         # doubling - always
         target_point = add_points(target_point, target_point, p)
+        #print(target_point)
         if current_bit == "1":
             target_point = add_points(target_point, G, p)
     return target_point
 
-#shared----------------------------
-a = 2
-b = 3  
-index = random.randint(0, 4)
-print(index)
-p = sets[index][0]
-G = (sets[index][1],sets[index][2])
 
+#shared----------------------------
+p = generate_prime_in_range(1000,5000)
+a = random.randrange(5,p)
+G = (random.randrange(3000,4000),random.randrange(5000,6000))
+b = G[1]**2 - G[0]**3 - G[0] * a 
 lower_limit = p + 1 - 2 * int(p**0.5)
 upper_limit = p + 1 + 2 * int(p**0.5)
 #----------------------------------
@@ -98,7 +88,6 @@ Key_Alice = apply_double_and_add_method(Kbpub,Ka,p)
 #Bob Decrypting:
 Key_Bob = apply_double_and_add_method(Kapub,Kb,p)
 
+print("ans:::")
 print(Key_Alice)
 print(Key_Bob)
-
-
