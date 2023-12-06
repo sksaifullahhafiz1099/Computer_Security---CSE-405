@@ -1,5 +1,6 @@
 from aes import AES
 from key import Key
+import time
 from util import Util
 
 def encrypt(message,key):
@@ -37,23 +38,25 @@ input_chunks = util.chunk_string(padded_input)
 
 #taking key and creating chunk array(only first one will be used)
 user_key =input("Enter a Key: ")
+start_time_key = time.time()
 padded_key = util.pad_input(user_key)
 key_chunks = util.chunk_string(padded_key)
 
 #only the first chunk is taken as the key matrix
 key = util.string_to_matrix(key_chunks[0])
+end_time_key = time.time()
 
+print("")
+print("key:")
+print("In ASCII: ",key_chunks[0])
+print("In HEX: ",util.string_to_hex_pairs(key_chunks[0]))
+print("")
+print("Plain Text:")
+print("In ASCII: ",message)
+print("In HEX: ",util.string_to_hex_pairs(message))
 #-----------------------------------------------
-"""
-message = util.string_to_matrix(input_chunks[0])
-plain_message = list(map(list, zip(*message)))
-encrypted_message = encrypt(plain_message,key)
-encrypted_message = list(map(list, zip(*encrypted_message)))
-util.print_mat(encrypted_message)
-print(util.matrix_to_string(encrypted_message))
-"""
-print(input_chunks)
 
+start_time_encryption = time.time()
 cipher_blocks = [[[0] * 4 for _ in range(4)] for _ in range(len(input_chunks))]
 for i in range(len(input_chunks)):
     P = util.string_to_matrix(input_chunks[i])
@@ -62,18 +65,11 @@ for i in range(len(input_chunks)):
     if i == 0:
         cipher_blocks[0] = encrypt(util.xor(IV,P),key)
         cipher_blocks[0] = list(map(list, zip(*cipher_blocks[0])))
-        print(util.print_mat(cipher_blocks[0]))
     else:
         cipher_blocks[i] = encrypt(util.xor(cipher_blocks[i-1],P),key)
         cipher_blocks[i] = list(map(list, zip(*cipher_blocks[i])))
 
-#printing cipher strings        
-#cipher_string = util.matrix_list_to_string_inv(cipher_blocks)
-#print(cipher_string)
-#util.print_mat(cipher_blocks[0])
-
-for element in cipher_blocks:
-    util.print_mat(element)
+end_time_encryption = time.time()
 
 from aes import AES
 from key import Key
@@ -105,30 +101,18 @@ IV = [
         [0xf1, 0xbb, 0x19, 0x87]
     ]
 
-"""
-#taking cipher massage and creating string chunk array
-message = input("Enter Message to Decrypt: ")
-padded_input = util.pad_input(message)
-input_chunks = util.chunk_string(padded_input)
-"""
-"""
-input_chunk_m = [
-                    [
-                        [0x7f, 0x67, 0xac, 0xf5],
-                        [0xc8, 0x6b, 0x44, 0x5b],
-                        [0xbe, 0x9d, 0x81, 0xc5],
-                        [0x26, 0x20, 0x29, 0x8]
-                    ]
-                ]
-"""
+
 input_chunk_m = cipher_blocks
+print("")
+print("Ciphered Text:")
+print("In ASCII: ",util.matrix_list_to_string(cipher_blocks))
+print("In HEX: ",util.block_to_hex_pairs(cipher_blocks))
 
-#taking key and creating chunk array(only first one will be used)
-user_key =input("Enter a Key: ")
-padded_key = util.pad_input(user_key)
-key_chunks = util.chunk_string(padded_key)
+#user_key =input("Enter a Key: ")
+#padded_key = util.pad_input(user_key)
+#key_chunks = util.chunk_string(padded_key)
 
-key = util.string_to_matrix(key_chunks[0])
+#key = util.string_to_matrix(key_chunks[0])
 
 keys = [[[0] * 4 for _ in range(4)] for _ in range(11)]
 keys[0] = key 
@@ -137,44 +121,30 @@ for i in range(10):
     key = keyExpand.expand(key, i)
     keys[i+1] = key
 
-"""
-encrypted_message = [[0x29, 0xc3, 0x50, 0x5f],
-    [0x57, 0x14, 0x20, 0xf6],
-    [0x40, 0x22, 0x99, 0xb3],
-    [0x1a, 0x2, 0xd7, 0x3a]]
-encrypted_message = list(map(list, zip(*encrypted_message)))
-encrypted_message = decrypt(encrypted_message, keys)
-encrypted_message = list(map(list, zip(*encrypted_message)))
-print(util.matrix_to_string(encrypted_message))
-"""
-
-
-
 plain_blocks = [[[0] * 4 for _ in range(4)] for _ in range(len(input_chunk_m))]
-#print(plain_blocks)
-#print(input_chunk_m[0])
-#print(util.matrix_to_string(input_chunk_m[0]))
+
+start_time_decryption = time.time()
 for i in range(len(input_chunk_m)):
-    print(i)
     P = input_chunk_m[i]
     P = list(map(list, zip(*P)))
-    #util.print_mat(P)
     if i == 0:
         plain_blocks[0] = util.xor(decrypt(P,keys),IV)
         plain_blocks[0] = list(map(list, zip(*plain_blocks[0])))
-        #print(util.matrix_to_string(plain_blocks[0]))
     else:
         #temp_mat = list(map(list, zip(*input_chunk_m[i-1])))
         temp_mat = input_chunk_m[i-1]
         plain_blocks[i] = util.xor(decrypt(P,keys),temp_mat)
         plain_blocks[i] = list(map(list, zip(*plain_blocks[i])))
 
-#print(util.matrix_to_string(plain_blocks[0]))
-#util.print_mat(plain_blocks[0])
-#print(plain_blocks)
+end_time_decryption = time.time()
 plain_string = util.matrix_list_to_string(plain_blocks)
-print(plain_string)
-print("done")
-#util.print_mat(message)
-#message = list(map(list, zip(*message)))
-#print(util.matrix_to_string(message))
+print("")
+print("Deciphered Text:")
+print("In ASCII: ",plain_string)
+print("In HEX: ",util.string_to_hex_pairs(plain_string))
+print("")
+print("Execution Time in Details:")
+print("Key Schedule Time: ",abs(round((start_time_key-end_time_key)*1000, 4)),"ms")
+print("Encrypton Time: ",abs(round((start_time_encryption-end_time_encryption)*1000, 4)),"ms")
+print("Decryption Time: ",abs(round((start_time_decryption-end_time_decryption)*1000, 4)),"ms")
+

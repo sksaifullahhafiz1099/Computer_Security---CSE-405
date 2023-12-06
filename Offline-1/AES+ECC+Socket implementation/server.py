@@ -1,5 +1,6 @@
 import socket
 import pickle
+import time
 from ecc import *
 
 class CustomObject:
@@ -27,32 +28,34 @@ def start_server():
         print(f"Connection from {addr}")
 
 
-        #shared----------------------------
+        #shared-variables----------------------------
+        start_time_key = time.time()
         p = generate_prime_in_range(100000000000,500000000000)
         a = random.randrange(5,p)
         G = (random.randrange(3000,4000),random.randrange(5000,6000))
         b = G[1]**2 - G[0]**3 - G[0] * a 
         lower_limit = p + 1 - 2 * int(p**0.5)
         upper_limit = p + 1 + 2 * int(p**0.5)
-        #----------------------------------
-        #Alice:
+        #-------------------------------------------
+        #Alice generating Kapub:
         Ka = generate_prime_in_range(2, upper_limit)
         Kapub = apply_double_and_add_method(G,Ka,p,a)
 
-        # Step 1: Server sends a custom object to the client
+        # Step 1: Server Alice sends a Kapub to the client Bob
         initial_object = CustomObject(a,b,G,Kapub,(0, 0),p,1,[[[]]])
         client_socket.send(pickle.dumps(initial_object))
 
-        # Step 2: Server receives a custom object from the client
+        # Step 2: Server Alice receives a Kbpub from the client Bob
         received_data = client_socket.recv(1024)
         client_object = pickle.loads(received_data)
-        #print(f"Received from client: {client_object.Kapub}")
+        
+        #Alice generating key
         key_alice =  apply_double_and_add_method(client_object.Kbpub,Ka,p,a)
-        print("key: ",key_alice)
-        #key =  apply_double_and_add_method(client_object.Kbpub,Ka,p,a) 
-        # Custom processing logic on the server
+        end_time_key = time.time()
+        print("Alice's key int: ",key_alice[0])
+    
+        #AES encryption process with CBC
         #---------------------------------------
-
         from aes import AES
         from key import Key
         from util import Util
@@ -85,30 +88,36 @@ def start_server():
                 [0xf1, 0xbb, 0x19, 0x87]
             ]
 
-        #taking massage and creating string chunk array
-        message = input("Enter something: ")
-        padded_input = util.pad_input(message)
-        input_chunks = util.chunk_string(padded_input)
 
         #taking key and creating chunk array(only first one will be used)
-        #user_key =input("Enter a Key: ")
-        user_key = str(key_alice[0])
+        #user_key =input("Enter a Key: ") #not taken, created using ecc
+        hex_values = [hex(ord(char))[2:] for char in str(key_alice[0])]
+        hex_string = ''.join(hex_value.zfill(2) for hex_value in hex_values)
+        user_key = hex_string
         padded_key = util.pad_input(user_key)
         key_chunks = util.chunk_string(padded_key)
 
         #only the first chunk is taken as the key matrix
         key = util.string_to_matrix(key_chunks[0])
-        #-----------------------------------------------
-        """
-        message = util.string_to_matrix(input_chunks[0])
-        plain_message = list(map(list, zip(*message)))
-        encrypted_message = encrypt(plain_message,key)
-        encrypted_message = list(map(list, zip(*encrypted_message)))
-        util.print_mat(encrypted_message)
-        print(util.matrix_to_string(encrypted_message))
-        """
-        print(input_chunks)
 
+        #taking massage and creating string chunk array
+        message = input("Enter something: ")
+        padded_input = util.pad_input(message)
+        input_chunks = util.chunk_string(padded_input)
+
+        #-----------------------------------------------
+        print("")
+        print("key:")
+        print("In ASCII: ",key_chunks[0])
+        print("In HEX: ",util.string_to_hex_pairs(key_chunks[0]))
+        print("")
+        print("Plain Text:")
+        print("In ASCII: ",message)
+        print("In HEX: ",util.string_to_hex_pairs(message))
+        #-----------------------------------------------
+
+        #AES
+        start_time_encryption = time.time()
         cipher_blocks = [[[0] * 4 for _ in range(4)] for _ in range(len(input_chunks))]
         for i in range(len(input_chunks)):
             P = util.string_to_matrix(input_chunks[i])
@@ -117,29 +126,23 @@ def start_server():
             if i == 0:
                 cipher_blocks[0] = encrypt(util.xor(IV,P),key)
                 cipher_blocks[0] = list(map(list, zip(*cipher_blocks[0])))
-                print(util.print_mat(cipher_blocks[0]))
             else:
                 cipher_blocks[i] = encrypt(util.xor(cipher_blocks[i-1],P),key)
                 cipher_blocks[i] = list(map(list, zip(*cipher_blocks[i])))
-
-        #printing cipher strings        
-        #cipher_string = util.matrix_list_to_string_inv(cipher_blocks)
-        #print(cipher_string)
-        #util.print_mat(cipher_blocks[0])
-
-        for element in cipher_blocks:
-            util.print_mat(element)
-
-        
+        end_time_encryption = time.time()
+   
         client_object.data = cipher_blocks
-        #print("client object data:")
-        #print(client_object.data)
-        #---------------------------------------
-        #processed_data = client_object
-        #print(f"Processed data: {processed_data.Kapub}")
+        print("")
+        print("Ciphered Text:")
+        print("In ASCII: ",util.matrix_list_to_string(cipher_blocks))
+        print("In HEX: ",util.block_to_hex_pairs(cipher_blocks))
 
-        # Step 3: Server sends another custom object to the client
-        # Step 3: Server sends another custom object to the client
+        print("")
+        print("Execution Time in Details:")
+        print("Key Schedule Time: ",abs(round((start_time_key-end_time_key)*1000, 4)),"ms")
+        print("Encrypton Time: ",abs(round((start_time_encryption-end_time_encryption)*1000, 4)),"ms")
+        #-----------------------------------------------
+
         processed_data = CustomObject(a, b, G, Kapub, (0, 0), p, 77, cipher_blocks)
         server_response = CustomObject(
             a=processed_data.a,
@@ -149,10 +152,10 @@ def start_server():
             Kbpub=processed_data.Kbpub,
             p=processed_data.p,
             n=processed_data.n,
-            data=processed_data.data  # Assign cipher_blocks here
+            data=processed_data.data  
             )
+        #Server Alice sends cipher blocks to Client Bob
         client_socket.send(pickle.dumps(server_response))
-
         client_socket.close()
         break
 
