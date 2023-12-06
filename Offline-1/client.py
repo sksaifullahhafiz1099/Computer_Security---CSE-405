@@ -40,7 +40,7 @@ def start_client():
         Kbpub=Kbpub,
         p=server_object.p,
         n=1,  # Adjust n as needed
-        data=[[[0]]]  # Adjust data as needed
+        data=[[[]]]  # Adjust data as needed
     )
     #print(f"Processed data: {client_data}")
 
@@ -100,8 +100,10 @@ def start_client():
                     ]
     """
     cipher_blocks = server_response_object.data
+    print("--- ",server_response_object.n)
     input_chunk_m = cipher_blocks
-
+    print("input chunks:")
+    print(input_chunk_m)
     #taking key and creating chunk array(only first one will be used)
     #user_key =input("Enter a Key: ")
     user_key = str(key_bob[0])
@@ -109,6 +111,8 @@ def start_client():
     key_chunks = util.chunk_string(padded_key)
 
     key = util.string_to_matrix(key_chunks[0])
+    print("key:")
+    util.print_mat(key)
 
     keys = [[[0] * 4 for _ in range(4)] for _ in range(11)]
     keys[0] = key 

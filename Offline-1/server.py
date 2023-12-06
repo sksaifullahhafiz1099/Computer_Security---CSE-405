@@ -92,13 +92,12 @@ def start_server():
 
         #taking key and creating chunk array(only first one will be used)
         #user_key =input("Enter a Key: ")
-        user_key = key_alice
+        user_key = str(key_alice[0])
         padded_key = util.pad_input(user_key)
         key_chunks = util.chunk_string(padded_key)
 
         #only the first chunk is taken as the key matrix
         key = util.string_to_matrix(key_chunks[0])
-
         #-----------------------------------------------
         """
         message = util.string_to_matrix(input_chunks[0])
@@ -133,12 +132,25 @@ def start_server():
 
         
         client_object.data = cipher_blocks
+        #print("client object data:")
+        #print(client_object.data)
         #---------------------------------------
-        processed_data = client_object
+        #processed_data = client_object
         #print(f"Processed data: {processed_data.Kapub}")
 
         # Step 3: Server sends another custom object to the client
-        server_response = CustomObject(processed_data)
+        # Step 3: Server sends another custom object to the client
+        processed_data = CustomObject(a, b, G, Kapub, (0, 0), p, 77, cipher_blocks)
+        server_response = CustomObject(
+            a=processed_data.a,
+            b=processed_data.b,
+            G=processed_data.G,
+            Kapub=processed_data.Kapub,
+            Kbpub=processed_data.Kbpub,
+            p=processed_data.p,
+            n=processed_data.n,
+            data=processed_data.data  # Assign cipher_blocks here
+            )
         client_socket.send(pickle.dumps(server_response))
 
         client_socket.close()
